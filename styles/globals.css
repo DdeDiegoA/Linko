@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Bitsand';
+  src: url('/fonts/Bitsand-Regular-BF69e2395a5e48e.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --lavender:   #E2D9F3;
+  --deep:       #4A3080;
+  --soft-white: #FAF8FF;
+  --charcoal:   #1E1E2E;
+  --signal:     #47f654;
+
+  --font-display: 'Bitsand', Georgia, serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-bitsand: 'Bitsand', Georgia, serif;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius: 12px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+details {
+  background: var(--lavender);
+  border-radius: var(--radius);
+  border: 1px solid rgba(74, 48, 128, 0.08);
+  overflow: hidden;
+}
+
+summary {
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--deep);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::after {
+  content: '+';
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--signal);
+  transition: transform 0.2s var(--ease);
+}
+
+details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+details[open] summary {
+  background: rgba(74, 48, 128, 0.03);
+}

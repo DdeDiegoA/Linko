@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+
+# Build
+.next
+out
+dist
+build
+
+# Data / DB
+data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Uploads
+public/uploads
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+service-account*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+next-env.d.ts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Specs / AI artifacts
+*.spec.md
+*.spec.txt
+specs/
+SPEC.md
+graphify-out/
