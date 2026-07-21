@@ -18,3 +18,5 @@ public/uploads
 *.log
 npm-debug.log*
 graphify-out
+.DS_Store
+._*
