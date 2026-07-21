@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } fr
 import { InView } from "@/components/animate-ui/effects/in-view";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
 import PublicPage from "@/components/PublicPage";
+import PreviewModal from "@/components/PreviewModal";
 import type { LinkItem, Page, SocialLink } from "@/types";
 
 const SWATCHES = ["#8e93ff", "#1a1a1a", "#898ef6", "#5a5d98"];
@@ -21,6 +22,7 @@ export default function StyleEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof Page>(key: K, value: Page[K]) {
@@ -217,17 +219,40 @@ export default function StyleEditor({
       </AnimateButton>
       </form>
 
-      <aside className="w-full lg:w-[360px] lg:flex-shrink-0">
+      <aside className="hidden w-full lg:block lg:w-[360px] lg:flex-shrink-0">
         <div className="lg:sticky lg:top-9">
           <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-wide text-muted">Vista previa</h3>
-          <div className="overflow-hidden rounded-[28px] border-[10px] border-[#141416] bg-[#141416] shadow-xl">
-            <div className="h-[560px] overflow-y-auto rounded-[18px]">
-              <PublicPage data={{ page: form, links, socials }} />
-            </div>
-          </div>
+          <PreviewFrame form={form} links={links} socials={socials} />
           <p className="mt-2 text-center text-xs text-muted">Cambios en vivo · no guardado hasta confirmar</p>
         </div>
       </aside>
+
+      <AnimateButton
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        aria-label="Vista previa"
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-accent px-5 py-3 font-semibold text-fg shadow-[0_2px_12px_rgba(71,246,84,0.35)] hover:opacity-90 lg:hidden"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        Preview
+      </AnimateButton>
+
+      <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Vista previa">
+        <PreviewFrame form={form} links={links} socials={socials} />
+      </PreviewModal>
+    </div>
+  );
+}
+
+function PreviewFrame({ form, links, socials }: { form: Page; links: LinkItem[]; socials: SocialLink[] }) {
+  return (
+    <div className="overflow-hidden rounded-[28px] border-[10px] border-[#141416] bg-[#141416] shadow-xl">
+      <div className="h-[560px] overflow-y-auto rounded-[18px]">
+        <PublicPage data={{ page: form, links, socials }} />
+      </div>
     </div>
   );
 }

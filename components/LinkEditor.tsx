@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
 import IconPicker from "@/components/IconPicker";
 import TablerIcon from "@/components/TablerIcon";
+import PreviewModal from "@/components/PreviewModal";
 import type { LinkItem, Page } from "@/types";
 
 const EMPTY_DRAFT = {
@@ -30,6 +31,7 @@ export default function LinkEditor({
 }) {
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function reload() {
     const res = await fetch("/api/links");
@@ -73,8 +75,8 @@ export default function LinkEditor({
   }
 
   return (
-    <div className="flex max-w-[1100px] gap-10">
-      <div className="w-[680px]">
+    <div className="flex flex-col gap-9 lg:flex-row lg:items-start">
+      <div className="w-full lg:w-[680px] lg:flex-shrink-0">
       <h2 className="mb-1 font-display text-[32px] font-normal text-fg">Links</h2>
       <p className="mb-9 text-sm text-muted">20 links máximo. Usa las flechas para reordenar.</p>
 
@@ -160,14 +162,44 @@ export default function LinkEditor({
       )}
       </div>
 
-      <LinkPreview page={page} links={links} />
+      <div className="hidden lg:block lg:w-[380px] lg:flex-shrink-0">
+        <LinkPreview page={page} links={links} />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        aria-label="Vista previa"
+        title="Vista previa"
+        className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-accent px-5 py-3.5 font-semibold text-fg shadow-[0_2px_12px_rgba(71,246,84,0.35)] hover:opacity-90 lg:hidden"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        Preview
+      </button>
+
+      <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Vista previa">
+        <LinkPreview page={page} links={links} />
+      </PreviewModal>
     </div>
   );
 }
 
 function LinkPreview({ page, links }: { page: Page; links: LinkItem[] }) {
   return (
-    <aside className="w-[380px] flex-shrink-0">
+    <aside className="w-full">
       <div className="mb-2 flex items-center gap-1.5">
         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
