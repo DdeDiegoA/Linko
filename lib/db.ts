@@ -7,13 +7,19 @@ const dataDir = path.join(process.cwd(), "data");
 fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(path.join(dataDir, "linko.db"));
+// busy_timeout must be set before any other pragma/statement that can write
+// (journal_mode=WAL itself writes the WAL header) — otherwise the very first
+// concurrent opener to lose the race throws SQLITE_BUSY with no retry applied yet.
+db.pragma("busy_timeout = 5000");
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
-db.pragma("busy_timeout = 5000"); // concurrent openers (e.g. next build's parallel workers) wait instead of throwing SQLITE_BUSY
 
 // Schema/seed only runs once per db file (guarded by user_version) instead of on
-// every module import — next build spins up several parallel workers that each
-// import this module, and repeating ~15 writes per worker caused SQLITE_BUSY.
+// every module import. next.config.ts imports this module once up front, in the
+// single main build process, before `next build` spawns its parallel workers —
+// so by the time any worker gets here, migration is already done and this is
+// just a cheap version read. Kept version-guarded (not just a "ran once" flag)
+// so it's also correct for `next dev` and any process that imports this fresh.
 const SCHEMA_VERSION = 1;
 if ((db.pragma("user_version", { simple: true }) as number) < SCHEMA_VERSION) {
   runMigrations();
