@@ -9,7 +9,18 @@ fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, "linko.db"));
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
+db.pragma("busy_timeout = 5000"); // concurrent openers (e.g. next build's parallel workers) wait instead of throwing SQLITE_BUSY
 
+// Schema/seed only runs once per db file (guarded by user_version) instead of on
+// every module import — next build spins up several parallel workers that each
+// import this module, and repeating ~15 writes per worker caused SQLITE_BUSY.
+const SCHEMA_VERSION = 1;
+if ((db.pragma("user_version", { simple: true }) as number) < SCHEMA_VERSION) {
+  runMigrations();
+  db.pragma(`user_version = ${SCHEMA_VERSION}`);
+}
+
+function runMigrations() {
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,5 +165,6 @@ db.prepare(
   `INSERT OR IGNORE INTO users (email, password_hash, username, role) VALUES (?, ?, ?, 'super')`
 ).run(SUPER_EMAIL, SUPER_HASH, SUPER_USERNAME);
 // Admin (role "super") no tiene perfil/links — sólo gestiona usuarios y ve analíticas, sin page propia.
+}
 
 export default db;
