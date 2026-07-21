@@ -158,6 +158,21 @@ export default function AdminPage({ username }: Props) {
     fetchUsers();
   }
 
+  async function deleteUser(id: number, username: string) {
+    const ok = window.confirm(
+      `¿Eliminar a "${username}" definitivamente?\n\nEsto borrará su página, links, redes sociales y todas las métricas (visitas y clicks). Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+    const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setFormError(data.error ?? "Error al eliminar usuario");
+    } else {
+      setFormError(null);
+    }
+    fetchUsers();
+  }
+
   useEffect(() => {
     fetchStats();
     fetchUsers();
@@ -403,7 +418,7 @@ export default function AdminPage({ username }: Props) {
                                   <tr
                                     className={`border-t border-[#e6e6e4] bg-white ${
                                       isMe ? "bg-accent/10" : ""
-                                    }`}
+                                    } ${!u.active ? "opacity-60" : ""}`}
                                   >
                                     <td className="px-4 py-2.5 text-fg">
                                       <button
@@ -428,6 +443,11 @@ export default function AdminPage({ username }: Props) {
                                             tú
                                           </span>
                                         )}
+                                        {!u.active && (
+                                          <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+                                            Inactivo
+                                          </span>
+                                        )}
                                       </button>
                                       <div className="text-xs text-fg/60">{u.email}</div>
                                       <div className="text-xs text-fg/50">
@@ -450,14 +470,24 @@ export default function AdminPage({ username }: Props) {
                                       </select>
                                     </td>
                                     <td className="px-4 py-2.5">
-                                      <button
-                                        type="button"
-                                        disabled={isMe}
-                                        onClick={() => updateUser(u.id, { active: u.active ? 0 : 1 })}
-                                        className="rounded border border-[#e6e6e4] bg-[#fafaf9] px-2.5 py-1 text-xs text-fg outline-none hover:border-accent hover:text-accent disabled:opacity-40"
-                                      >
-                                        Desactivar
-                                      </button>
+                                      <div className="flex gap-1.5">
+                                        <button
+                                          type="button"
+                                          disabled={isMe}
+                                          onClick={() => updateUser(u.id, { active: u.active ? 0 : 1 })}
+                                          className="rounded border border-[#e6e6e4] bg-[#fafaf9] px-2.5 py-1 text-xs text-fg outline-none hover:border-accent hover:text-accent disabled:opacity-40"
+                                        >
+                                          {u.active ? "Desactivar" : "Reactivar"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={isMe}
+                                          onClick={() => deleteUser(u.id, u.username)}
+                                          className="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700 outline-none hover:border-red-400 disabled:opacity-40"
+                                        >
+                                          Eliminar
+                                        </button>
+                                      </div>
                                     </td>
                                   </tr>
                                   <AnimatePresence initial={false}>
@@ -529,7 +559,7 @@ export default function AdminPage({ username }: Props) {
                           </table>
                         </div>
                         <p className="text-xs text-[#8b8b8b]">
-                          Usuarios inactivos no se listan ni pueden iniciar sesión.
+                          Usuarios inactivos no pueden iniciar sesión, pero siguen listados aquí (marcados como &quot;Inactivo&quot;) hasta que los reactives o elimines.
                         </p>
                         </div>
                       )}

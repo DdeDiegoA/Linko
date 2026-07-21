@@ -38,8 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         LEFT JOIN (SELECT page_id, COUNT(*) AS n FROM social_links GROUP BY page_id) sc ON sc.page_id = (SELECT id FROM pages WHERE user_id = u.id)
         LEFT JOIN (SELECT page_id, COUNT(*) AS n FROM visits GROUP BY page_id) vc ON vc.page_id = (SELECT id FROM pages WHERE user_id = u.id)
         LEFT JOIN (SELECT link_id, COUNT(*) AS n FROM clicks GROUP BY link_id) cc ON cc.link_id IN (SELECT id FROM links WHERE page_id = (SELECT id FROM pages WHERE user_id = u.id))
-        WHERE u.active = 1
-        ORDER BY u.created_at DESC
+        ORDER BY u.active DESC, u.created_at DESC
       `)
       .all() as AdminUserRow[];
     return res.status(200).json(users);
@@ -115,6 +114,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ ok: true });
   }
 
-  res.setHeader("Allow", "GET, POST, PATCH");
+  if (req.method === "DELETE") {
+    const id = Number(req.query.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "id requerido" });
+    }
+    if (auth.userId === id) {
+      return res.status(400).json({ error: "No puedes eliminarte a ti mismo" });
+    }
+    const target = db.prepare("SELECT id FROM users WHERE id = ?").get(id);
+    if (!target) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    db.prepare("DELETE FROM users WHERE id = ?").run(id);
+    return res.status(200).json({ ok: true });
+  }
+
+  res.setHeader("Allow", "GET, POST, PATCH, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
 }

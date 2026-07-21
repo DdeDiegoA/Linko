@@ -112,9 +112,9 @@ export default function LinkEditor({
                   ▼
                 </button>
               </div>
-              <div className="flex-1 text-sm">
-                <strong className="block font-semibold text-fg">{link.text}</strong>
-                <span className="text-muted">{link.url}</span>
+              <div className="min-w-0 flex-1 text-sm">
+                <strong className="block truncate font-semibold text-fg">{link.text}</strong>
+                <span className="block truncate text-muted" title={link.url}>{link.url}</span>
               </div>
               <div className="flex gap-1.5">
                 <button
