@@ -91,6 +91,9 @@ dokku config:set linko LINKO_SUPER_PASSWORD="$(openssl rand -base64 16)"
 
 # 4. Dominio
 dokku domains:add linko linko.decodgo.com
+
+# 5. Límite de tamaño de subida (nginx default es 1MB, la app permite 5MB)
+dokku nginx:set linko client-max-body-size 10m
 ```
 
 ### Deploy inicial
