@@ -42,6 +42,16 @@ interface UserAnalytics {
   top_links: { id: number; text: string; clicks: number }[];
 }
 
+interface ApplicationRow {
+  id: number;
+  username: string;
+  email: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at: string | null;
+}
+
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const token = ctx.req.cookies.token ?? "";
   const payload = verifyToken(token);
@@ -57,9 +67,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   return { props: { username: row.username } };
 };
 
-const TABS = ["general", "usuarios"] as const;
+const TABS = ["general", "usuarios", "solicitudes"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABELS: Record<Tab, string> = { general: "General", usuarios: "Usuarios" };
+const TAB_LABELS: Record<Tab, string> = { general: "General", usuarios: "Usuarios", solicitudes: "Solicitudes" };
 
 const STAT_CARDS: { key: keyof Stats; label: string }[] = [
   { key: "users", label: "Usuarios" },
@@ -96,6 +106,12 @@ export default function AdminPage({ username }: Props) {
   const [creating, setCreating] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [apps, setApps] = useState<ApplicationRow[]>([]);
+  const [appsLoading, setAppsLoading] = useState(true);
+  const [appError, setAppError] = useState<string | null>(null);
+  const [approvedCredential, setApprovedCredential] = useState<{ username: string; password: string } | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   async function fetchStats() {
     setStatsLoading(true);
@@ -177,6 +193,74 @@ export default function AdminPage({ username }: Props) {
     fetchStats();
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (tab === "solicitudes") {
+      fetchApps();
+    }
+  }, [tab]);
+
+  async function fetchApps() {
+    setAppsLoading(true);
+    setAppError(null);
+    try {
+      const res = await fetch("/api/admin/applications");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setAppError(data.error ?? "Error al cargar solicitudes");
+        return;
+      }
+      setApps((await res.json()) as ApplicationRow[]);
+    } finally {
+      setAppsLoading(false);
+    }
+  }
+
+  async function approveApp(id: number) {
+    setProcessingId(id);
+    setAppError(null);
+    setApprovedCredential(null);
+    try {
+      const res = await fetch("/api/admin/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { tempPassword?: string; username?: string; error?: string };
+      if (!res.ok) {
+        setAppError(data.error ?? "Error al aprobar la solicitud");
+        return;
+      }
+      if (data.username && data.tempPassword) {
+        setApprovedCredential({ username: data.username, password: data.tempPassword });
+      }
+      fetchApps();
+      fetchStats();
+      fetchUsers();
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function rejectApp(id: number) {
+    setProcessingId(id);
+    setAppError(null);
+    try {
+      const res = await fetch("/api/admin/applications", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setAppError(data.error ?? "Error al rechazar la solicitud");
+        return;
+      }
+      fetchApps();
+    } finally {
+      setProcessingId(null);
+    }
+  }
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -320,7 +404,7 @@ export default function AdminPage({ username }: Props) {
                           required
                           pattern="[a-z0-9_-]{3,30}"
                           title="3-30 caracteres: minúsculas, números, - o _"
-                          placeholder="usuario"
+                          placeholder="maru.creates"
                           value={form.username}
                           onChange={(e) => setForm({ ...form, username: e.target.value })}
                           className="rounded border border-[#e6e6e4] bg-[#fafaf9] px-4 py-3 text-fg outline-none placeholder:text-[#8b8b8b] focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -336,7 +420,7 @@ export default function AdminPage({ username }: Props) {
                           type="email"
                           required
                           autoComplete="off"
-                          placeholder="tu@email.com"
+                          placeholder="hola@tudominio.com"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
                           className="rounded border border-[#e6e6e4] bg-[#fafaf9] px-4 py-3 text-fg outline-none placeholder:text-[#8b8b8b] focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -353,7 +437,7 @@ export default function AdminPage({ username }: Props) {
                           required
                           minLength={8}
                           autoComplete="new-password"
-                          placeholder="••••••••"
+                          placeholder="Mínimo 8 caracteres"
                           value={form.password}
                           onChange={(e) => setForm({ ...form, password: e.target.value })}
                           className="rounded border border-[#e6e6e4] bg-[#fafaf9] px-4 py-3 text-fg outline-none placeholder:text-[#8b8b8b] focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -565,6 +649,123 @@ export default function AdminPage({ username }: Props) {
                       )}
                     </div>
                   </div>
+                </InView>
+              )}
+
+              {tab === "solicitudes" && (
+                <InView as="div" className="w-full" offset={18}>
+                  <h2 className="mb-1 font-display text-[32px] font-normal text-fg">Solicitudes</h2>
+                  <p className="mb-7 text-base text-[#6b6b6b]">
+                    Postulaciones desde la landing. Cupo actual: 20 usuarios activos. Aprobar genera
+                    una contraseña temporal que tenés que enviar manualmente al usuario.
+                  </p>
+
+                  {appError && (
+                    <p role="alert" className="mb-4 text-sm text-red-700">
+                      {appError}
+                    </p>
+                  )}
+
+                  {approvedCredential && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-5 rounded-lg border border-accent bg-accent/10 px-5 py-4"
+                    >
+                      <div className="text-sm font-semibold text-fg">Usuario aprobado — copiá y enviá estas credenciales (no se mostrarán de nuevo):</div>
+                      <div className="mt-2 flex flex-col gap-1 text-sm text-fg">
+                        <div>username: <code className="font-mono">{approvedCredential.username}</code></div>
+                        <div>password: <code className="font-mono">{approvedCredential.password}</code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(approvedCredential.password).catch(() => {});
+                            }}
+                            className="ml-2 rounded border border-[#e6e6e4] bg-white px-2 py-0.5 text-xs text-fg hover:border-accent hover:text-accent"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {appsLoading ? (
+                    <p className="text-sm text-[#8b8b8b]">Cargando…</p>
+                  ) : apps.length === 0 ? (
+                    <p className="text-sm text-[#8b8b8b]">No hay solicitudes.</p>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-[#e6e6e4]">
+                      <table className="w-full text-left text-base">
+                        <thead className="bg-[#fafaf9] text-xs uppercase tracking-wide text-[#8b8b8b]">
+                          <tr>
+                            <th className="px-4 py-2.5 font-semibold">Usuario</th>
+                            <th className="px-4 py-2.5 font-semibold">Email</th>
+                            <th className="px-4 py-2.5 font-semibold">¿Por qué lo quiere?</th>
+                            <th className="px-4 py-2.5 font-semibold">Estado</th>
+                            <th className="px-4 py-2.5 font-semibold">Fecha</th>
+                            <th className="px-4 py-2.5 font-semibold">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apps.map((a) => (
+                            <tr
+                              key={a.id}
+                              className={`border-t border-[#e6e6e4] bg-white ${
+                                a.status !== "pending" ? "opacity-70" : ""
+                              }`}
+                            >
+                              <td className="px-4 py-3 text-fg">{a.username}</td>
+                              <td className="px-4 py-3 text-fg/80">{a.email}</td>
+                              <td className="px-4 py-3 max-w-[360px] text-sm text-fg/80 whitespace-pre-wrap">{a.reason}</td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                                    a.status === "pending"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : a.status === "approved"
+                                      ? "bg-accent/20 text-accent"
+                                      : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {a.status === "pending" ? "pendiente" : a.status === "approved" ? "aprobada" : "rechazada"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs text-fg/60">
+                                {new Date(a.created_at).toLocaleDateString("es-419")}
+                              </td>
+                              <td className="px-4 py-3">
+                                {a.status === "pending" ? (
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={processingId === a.id}
+                                      onClick={() => approveApp(a.id)}
+                                      className="rounded border border-accent bg-accent/10 px-2.5 py-1 text-xs text-accent outline-none hover:bg-accent/20 disabled:opacity-50"
+                                    >
+                                      Aprobar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={processingId === a.id}
+                                      onClick={() => rejectApp(a.id)}
+                                      className="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700 outline-none hover:border-red-400 disabled:opacity-50"
+                                    >
+                                      Rechazar
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-[#8b8b8b]">
+                                    {a.reviewed_at ? new Date(a.reviewed_at).toLocaleDateString("es-419") : "—"}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </InView>
               )}
             </motion.div>

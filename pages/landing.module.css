@@ -162,8 +162,9 @@
 
 .heroForm {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  max-width: 420px;
+  max-width: 480px;
 }
 
 .heroInput {
@@ -699,11 +700,17 @@
 .finalCta .heroInput {
   background: var(--soft-white);
   border-color: var(--charcoal);
+  color: var(--charcoal);
 }
 
 .finalCta .heroInput:focus {
   border-color: var(--deep);
   box-shadow: 0 0 0 3px rgba(74, 48, 128, 0.15);
+}
+
+.finalCta .heroInput::placeholder {
+  color: var(--charcoal);
+  opacity: 0.45;
 }
 
 .finalCta .heroBtn {
@@ -761,4 +768,175 @@
 .footerCopy {
   font-size: 0.75rem;
   opacity: 0.5;
+}
+
+/* ── Access Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(30, 30, 46, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.modalCard {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: var(--soft-white);
+  border-radius: var(--radius);
+  border: 1px solid rgba(74, 48, 128, 0.08);
+  box-shadow: 0 20px 60px rgba(30, 30, 46, 0.35);
+  -webkit-overflow-scrolling: touch;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0;
+  font-family: var(--font-display);
+  color: var(--deep);
+}
+
+.modalHeader h3 {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  letter-spacing: 0.03em;
+  color: var(--deep);
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.65rem;
+  line-height: 1;
+  color: var(--charcoal);
+  opacity: 0.55;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.modalClose:hover {
+  background: rgba(74, 48, 128, 0.08);
+  opacity: 1;
+}
+
+.modalSub {
+  padding: 0 1.5rem;
+  margin: 0.4rem 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--charcoal);
+  opacity: 0.7;
+}
+
+.modalForm {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.modalLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--charcoal);
+  opacity: 0.7;
+}
+
+.modalInput,
+.modalTextarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 0.95rem;
+  border: 1.5px solid rgba(74, 48, 128, 0.18);
+  border-radius: calc(var(--radius) / 1.5);
+  background: var(--soft-white);
+  color: var(--charcoal);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  /* ponytail: 16px evita el auto-zoom de iOS al hacer focus */
+}
+
+.modalInput:focus,
+.modalTextarea:focus {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px rgba(71, 246, 84, 0.2);
+}
+
+.modalTextarea {
+  resize: vertical;
+}
+
+.modalSubmit {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: calc(var(--radius) / 1.5);
+  background: var(--charcoal);
+  color: var(--soft-white);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s, background 0.15s;
+}
+
+.modalSubmit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--deep);
+  box-shadow: 0 6px 20px rgba(30, 30, 46, 0.25);
+}
+
+.modalSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modalSuccess {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.modalSuccess h3 {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  color: var(--deep);
+  margin: 0 0 1rem;
+}
+
+.modalSuccess p {
+  font-size: 0.95rem;
+  color: var(--charcoal);
+  opacity: 0.8;
+  line-height: 1.55;
+  margin: 0 0 1.5rem;
+}
+
+.modalCloseBtn {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: calc(var(--radius) / 1.5);
+  background: var(--charcoal);
+  color: var(--soft-white);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), background 0.15s;
+}
+
+.modalCloseBtn:hover {
+  transform: translateY(-1px);
+  background: var(--deep);
 }

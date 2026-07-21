@@ -20,7 +20,7 @@ db.pragma("foreign_keys = ON");
 // so by the time any worker gets here, migration is already done and this is
 // just a cheap version read. Kept version-guarded (not just a "ran once" flag)
 // so it's also correct for `next dev` and any process that imports this fresh.
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 if ((db.pragma("user_version", { simple: true }) as number) < SCHEMA_VERSION) {
   runMigrations();
   db.pragma(`user_version = ${SCHEMA_VERSION}`);
@@ -88,6 +88,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_social_links_page_id ON social_links(page_id);
   CREATE INDEX IF NOT EXISTS idx_visits_page_id ON visits(page_id);
   CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id);
+
+  CREATE TABLE IF NOT EXISTS applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    reviewed_at TEXT,
+    temp_password TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 `);
 
 try {

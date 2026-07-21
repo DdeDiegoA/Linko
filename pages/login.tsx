@@ -42,7 +42,7 @@ export default function LoginPage() {
       <InView as="div" className="w-full max-w-[420px]">
         <form
           onSubmit={handleSubmit}
-          className="flex w-full flex-col gap-[22px] rounded-lg border border-border bg-surface px-9 py-11 shadow-lg"
+          className="flex w-full flex-col gap-[22px] rounded-lg border border-border bg-white px-9 py-11 shadow-lg"
         >
           <h1 className="text-center font-display text-[32px] font-normal text-fg">Entrar</h1>
           <p className="-mt-3 text-center font-display text-sm text-fg/80">Accedé a tu panel de edición</p>
@@ -56,7 +56,7 @@ export default function LoginPage() {
             type="email"
             required
             autoComplete="email"
-            placeholder="tu@email.com"
+            placeholder="hola@tudominio.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="rounded border border-border bg-bg px-4 py-3 text-fg outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -89,8 +89,8 @@ export default function LoginPage() {
 
         <p className="text-center font-display text-sm text-fg/80">
           ¿No tienes cuenta?{" "}
-          <Link href="/register" className="font-semibold text-fg underline underline-offset-4 hover:text-accent">
-            Crear una
+          <Link href="/?modal=access" className="font-semibold text-fg underline underline-offset-4 hover:text-accent">
+            Solicitar acceso
           </Link>
         </p>
       </form>

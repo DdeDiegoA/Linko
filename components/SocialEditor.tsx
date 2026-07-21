@@ -132,7 +132,7 @@ export default function SocialEditor({
         <FieldRow label="URL">
           <input
             type="url"
-            placeholder="https://github.com/usuario"
+            placeholder="https://instagram.com/maru.creates"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             className="flex-1 rounded border border-[#e6e6e4] bg-[#fafaf9] px-3.5 py-2.5 text-sm"
@@ -180,7 +180,7 @@ export default function SocialEditor({
         <FieldRow label="Texto">
           <input
             type="text"
-            placeholder="@usuario"
+            placeholder="@maru.creates"
             value={text}
             onChange={(e) => setText(e.target.value)}
             className="flex-1 rounded border border-[#e6e6e4] bg-[#fafaf9] px-3.5 py-2.5 text-sm"

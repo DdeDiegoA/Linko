@@ -337,14 +337,14 @@ function LinkForm({
       <div className="flex gap-2.5">
         <IconPicker value={draft.icon ?? ""} onChange={(v) => update("icon", v)} label="" />
         <input
-          placeholder="Texto"
+          placeholder="Portafolio"
           value={draft.text}
           onChange={(e) => update("text", e.target.value)}
           className="flex-1 rounded border border-[#e6e6e4] px-3 py-2 text-sm"
         />
       </div>
       <input
-        placeholder="https://..."
+        placeholder="https://maru.studio"
         value={draft.url}
         onChange={(e) => update("url", e.target.value)}
         className="rounded border border-[#e6e6e4] px-3 py-2 text-sm"
