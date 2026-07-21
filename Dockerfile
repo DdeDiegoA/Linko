@@ -19,6 +19,9 @@ ENV NODE_ENV=production
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
+# ponytail: Next standalone tracing misses sharp's native @img/* binary, copy it explicitly
+COPY --from=deps /app/node_modules/sharp ./node_modules/sharp
+COPY --from=deps /app/node_modules/@img ./node_modules/@img
 VOLUME ["/app/data", "/app/public/uploads"]
 EXPOSE 3000
 CMD ["node", "server.js"]
