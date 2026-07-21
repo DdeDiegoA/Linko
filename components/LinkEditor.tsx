@@ -2,12 +2,13 @@ import { useState } from "react";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
 import IconPicker from "@/components/IconPicker";
 import TablerIcon from "@/components/TablerIcon";
-import type { LinkItem } from "@/types";
+import type { LinkItem, Page } from "@/types";
 
 const EMPTY_DRAFT = {
   icon: "",
   text: "",
   url: "",
+  custom_style: 0 as 0 | 1,
   color: "#1a1a1a",
   background_color: "#898ef6",
   border_color: "#7e82df",
@@ -17,11 +18,15 @@ const EMPTY_DRAFT = {
 type DraftLink = typeof EMPTY_DRAFT;
 
 export default function LinkEditor({
+  page,
   links,
   onChange,
+  onPageSaved,
 }: {
+  page: Page;
   links: LinkItem[];
   onChange: (links: LinkItem[]) => void;
+  onPageSaved: (p: Page) => void;
 }) {
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +76,9 @@ export default function LinkEditor({
     <div className="flex max-w-[1100px] gap-10">
       <div className="w-[680px]">
       <h2 className="mb-1 font-display text-[32px] font-normal text-fg">Links</h2>
-      <p className="mb-9 text-sm text-muted">20 links máximo. Usá las flechas para reordenar.</p>
+      <p className="mb-9 text-sm text-muted">20 links máximo. Usa las flechas para reordenar.</p>
+
+      <DefaultStyleEditor page={page} onSaved={onPageSaved} />
 
       <section className="mb-5 rounded-lg border border-[#e6e6e4] border-t-[3px] border-t-accent bg-white p-6 shadow-sm">
         {links.map((link, i) =>
@@ -153,12 +160,12 @@ export default function LinkEditor({
       )}
       </div>
 
-      <LinkPreview links={links} />
+      <LinkPreview page={page} links={links} />
     </div>
   );
 }
 
-function LinkPreview({ links }: { links: LinkItem[] }) {
+function LinkPreview({ page, links }: { page: Page; links: LinkItem[] }) {
   return (
     <aside className="w-[380px] flex-shrink-0">
       <div className="mb-2 flex items-center gap-1.5">
@@ -172,35 +179,131 @@ function LinkPreview({ links }: { links: LinkItem[] }) {
         <div className="mb-1.5 h-3 w-3/5 rounded-full bg-fg/70" />
         <div className="mb-6 h-2 w-2/5 rounded-full bg-fg/40" />
         {links.length === 0 ? (
-          <p className="text-center text-xs text-fg/60">Sin links todavía. Agregá uno para verlo acá.</p>
+          <p className="text-center text-xs text-fg/60">Sin links todavía. Agrega uno para verlo aquí.</p>
         ) : (
           <div className="flex w-full flex-col gap-2">
-            {links.map((link) => (
-              <div
-                key={link.id}
-                className="flex items-center gap-2 rounded-md px-3.5 py-3 text-sm font-medium"
-                style={{
-                  color: link.color,
-                  backgroundColor: link.background_color,
-                  borderColor: link.border_color,
-                  borderWidth: link.border_width,
-                  borderStyle: "solid",
-                }}
-              >
-                {link.icon && (
-                  <span className="w-5 flex-shrink-0 text-center">
-                    <TablerIcon name={link.icon} size={18} />
-                  </span>
-                )}
-                <span className="flex-1 truncate">{link.text || "(sin texto)"}</span>
-                <span className="text-xs opacity-60">→</span>
-              </div>
-            ))}
+            {links.map((link) => {
+              const custom = link.custom_style === 1;
+              return (
+                <div
+                  key={link.id}
+                  className="flex items-center gap-2 rounded-md px-3.5 py-3 text-sm font-medium"
+                  style={{
+                    color: custom ? link.color : page.link_color,
+                    backgroundColor: custom ? link.background_color : page.link_background_color,
+                    borderColor: custom ? link.border_color : page.link_border_color,
+                    borderWidth: custom ? link.border_width : page.link_border_width,
+                    borderStyle: "solid",
+                  }}
+                >
+                  {link.icon && (
+                    <span className="w-5 flex-shrink-0 text-center">
+                      <TablerIcon name={link.icon} size={18} />
+                    </span>
+                  )}
+                  <span className="flex-1 truncate">{link.text || "(sin texto)"}</span>
+                  <span className="text-xs opacity-60">→</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
       <p className="mt-2 text-center text-xs text-muted">Vista previa en vivo de tus links.</p>
     </aside>
+  );
+}
+
+function DefaultStyleEditor({ page, onSaved }: { page: Page; onSaved: (p: Page) => void }) {
+  const [draft, setDraft] = useState({
+    link_color: page.link_color,
+    link_background_color: page.link_background_color,
+    link_border_color: page.link_border_color,
+    link_border_width: page.link_border_width,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function update<K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) {
+    setDraft((d) => ({ ...d, [key]: value }));
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/page", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...page, ...draft }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Error al guardar estilo por defecto");
+        return;
+      }
+      onSaved(data.page);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mb-5 rounded-lg border border-[#e6e6e4] border-t-[3px] border-t-accent bg-white p-6 shadow-sm">
+      <div className="mb-1 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-fg">Estilo por defecto</h3>
+        <span className="text-xs text-muted">Se aplica a todos los links sin personalizar</span>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <label className="text-xs text-muted">
+          Color texto
+          <input
+            type="color"
+            value={draft.link_color}
+            onChange={(e) => update("link_color", e.target.value)}
+            className="ml-1 h-7 w-9 cursor-pointer align-middle"
+          />
+        </label>
+        <label className="text-xs text-muted">
+          Fondo
+          <input
+            type="color"
+            value={draft.link_background_color}
+            onChange={(e) => update("link_background_color", e.target.value)}
+            className="ml-1 h-7 w-9 cursor-pointer align-middle"
+          />
+        </label>
+        <label className="text-xs text-muted">
+          Borde
+          <input
+            type="color"
+            value={draft.link_border_color}
+            onChange={(e) => update("link_border_color", e.target.value)}
+            className="ml-1 h-7 w-9 cursor-pointer align-middle"
+          />
+        </label>
+        <label className="text-xs text-muted">
+          Grosor
+          <input
+            type="number"
+            min={0}
+            max={20}
+            value={draft.link_border_width}
+            onChange={(e) => update("link_border_width", Number(e.target.value))}
+            className="ml-1 w-14 rounded border border-[#e6e6e4] px-1.5 py-1"
+          />
+        </label>
+        <AnimateButton
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="rounded bg-accent px-4 py-2 text-sm font-semibold text-fg hover:opacity-90 disabled:opacity-60"
+        >
+          {saving ? "Guardando…" : "Guardar estilo por defecto"}
+        </AnimateButton>
+      </div>
+      {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
+    </section>
   );
 }
 
@@ -214,12 +317,20 @@ function LinkForm({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<DraftLink>(
-    initial ? { ...initial, icon: initial.icon ?? "" } : EMPTY_DRAFT
+    initial
+      ? {
+          ...initial,
+          icon: initial.icon ?? "",
+          custom_style: initial.custom_style === 1 ? 1 : 0,
+        }
+      : EMPTY_DRAFT
   );
 
   function update<K extends keyof DraftLink>(key: K, value: DraftLink[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
   }
+
+  const custom = draft.custom_style === 1;
 
   return (
     <div className="mb-2 flex flex-col gap-2.5 rounded border border-accent bg-[#fafaf9] p-4">
@@ -238,46 +349,57 @@ function LinkForm({
         onChange={(e) => update("url", e.target.value)}
         className="rounded border border-[#e6e6e4] px-3 py-2 text-sm"
       />
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="text-xs text-muted">
-          Color texto
-          <input
-            type="color"
-            value={draft.color}
-            onChange={(e) => update("color", e.target.value)}
-            className="ml-1 h-7 w-9 cursor-pointer align-middle"
-          />
-        </label>
-        <label className="text-xs text-muted">
-          Fondo
-          <input
-            type="color"
-            value={draft.background_color}
-            onChange={(e) => update("background_color", e.target.value)}
-            className="ml-1 h-7 w-9 cursor-pointer align-middle"
-          />
-        </label>
-        <label className="text-xs text-muted">
-          Borde
-          <input
-            type="color"
-            value={draft.border_color}
-            onChange={(e) => update("border_color", e.target.value)}
-            className="ml-1 h-7 w-9 cursor-pointer align-middle"
-          />
-        </label>
-        <label className="text-xs text-muted">
-          Grosor
-          <input
-            type="number"
-            min={0}
-            max={20}
-            value={draft.border_width}
-            onChange={(e) => update("border_width", Number(e.target.value))}
-            className="ml-1 w-14 rounded border border-[#e6e6e4] px-1.5 py-1"
-          />
-        </label>
-      </div>
+      <label className="flex items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={custom}
+          onChange={(e) => update("custom_style", e.target.checked ? 1 : 0)}
+          className="h-3.5 w-3.5"
+        />
+        Personalizar estilo del botón (overrides sobre el estilo por defecto)
+      </label>
+      {custom && (
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-xs text-muted">
+            Color texto
+            <input
+              type="color"
+              value={draft.color}
+              onChange={(e) => update("color", e.target.value)}
+              className="ml-1 h-7 w-9 cursor-pointer align-middle"
+            />
+          </label>
+          <label className="text-xs text-muted">
+            Fondo
+            <input
+              type="color"
+              value={draft.background_color}
+              onChange={(e) => update("background_color", e.target.value)}
+              className="ml-1 h-7 w-9 cursor-pointer align-middle"
+            />
+          </label>
+          <label className="text-xs text-muted">
+            Borde
+            <input
+              type="color"
+              value={draft.border_color}
+              onChange={(e) => update("border_color", e.target.value)}
+              className="ml-1 h-7 w-9 cursor-pointer align-middle"
+            />
+          </label>
+          <label className="text-xs text-muted">
+            Grosor
+            <input
+              type="number"
+              min={0}
+              max={20}
+              value={draft.border_width}
+              onChange={(e) => update("border_width", Number(e.target.value))}
+              className="ml-1 w-14 rounded border border-[#e6e6e4] px-1.5 py-1"
+            />
+          </label>
+        </div>
+      )}
       <div className="flex gap-2">
         <AnimateButton
           type="button"

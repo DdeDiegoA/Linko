@@ -15,7 +15,17 @@ export interface Page {
   title_color: string;
   subtitle: string;
   subtitle_color: string;
+  // Estilo por defecto heredado por links/redes sin custom.
+  link_color: string;
+  link_background_color: string;
+  link_border_color: string;
+  link_border_width: number;
+  social_icon_color: string;
+  social_icon_background_color: string;
 }
+
+// 0 = hereda defaults del page, 1 = usa sus propios campos de estilo.
+export type CustomFlag = 0 | 1;
 
 export interface LinkItem {
   id: number;
@@ -27,6 +37,7 @@ export interface LinkItem {
   background_color: string;
   border_color: string;
   border_width: number;
+  custom_style: CustomFlag;
   position: number;
 }
 
@@ -45,6 +56,8 @@ export interface SocialLink {
   platform: SocialPlatform;
   icon: string | null;
   icon_color: string;
+  icon_background_color: string;
+  custom_color: CustomFlag;
   text: string;
   url: string;
   position: number;

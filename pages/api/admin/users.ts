@@ -101,13 +101,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const newRole = role === "super" ? "super" : "user";
       // No autodespedirse del super
       if (auth.userId === id && target.role === "super" && newRole !== "super") {
-        return res.status(400).json({ error: "No podés quitarte el rol super a vos mismo" });
+        return res.status(400).json({ error: "No puedes quitarte el rol super a ti mismo" });
       }
       db.prepare("UPDATE users SET role = ? WHERE id = ?").run(newRole, id);
     }
     if (typeof active === "number" && (active === 0 || active === 1)) {
       if (auth.userId === id && active === 0) {
-        return res.status(400).json({ error: "No podés desactivarte a vos mismo" });
+        return res.status(400).json({ error: "No puedes desactivarte a ti mismo" });
       }
       db.prepare("UPDATE users SET active = ? WHERE id = ?").run(active, id);
     }

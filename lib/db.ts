@@ -93,6 +93,58 @@ try {
   if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
 }
 
+// Estilo por defecto de los botones de links (a nivel page) — heredado por
+// links que no marquen custom_style=1. Ídem color de ícono de redes.
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN link_color TEXT NOT NULL DEFAULT '#1a1a1a';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN link_background_color TEXT NOT NULL DEFAULT '#898ef6';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN link_border_color TEXT NOT NULL DEFAULT '#7e82df';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN link_border_width INTEGER NOT NULL DEFAULT 1;`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN social_icon_color TEXT NOT NULL DEFAULT '#1a1a1a';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE pages ADD COLUMN social_icon_background_color TEXT NOT NULL DEFAULT '#ffffff';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+
+// Flag de override por item: 0 = hereda defaults del page, 1 = usa sus propios
+// campos de estilo. Cuando 0, los campos de color/borde se guardan con los
+// defaults del page para mantener las columnas NOT NULL válidas.
+try {
+  db.exec(`ALTER TABLE links ADD COLUMN custom_style INTEGER NOT NULL DEFAULT 0;`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE social_links ADD COLUMN custom_color INTEGER NOT NULL DEFAULT 0;`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+try {
+  db.exec(`ALTER TABLE social_links ADD COLUMN icon_background_color TEXT NOT NULL DEFAULT '#ffffff';`);
+} catch (err) {
+  if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+}
+
 const SUPER_EMAIL = process.env.LINKO_SUPER_EMAIL ?? "admin@linko.local";
 const SUPER_USERNAME = process.env.LINKO_SUPER_USERNAME ?? "admin";
 const SUPER_PASSWORD = process.env.LINKO_SUPER_PASSWORD ?? "linko-admin-2024";
@@ -100,9 +152,6 @@ const SUPER_HASH = bcrypt.hashSync(SUPER_PASSWORD, 10);
 db.prepare(
   `INSERT OR IGNORE INTO users (email, password_hash, username, role) VALUES (?, ?, ?, 'super')`
 ).run(SUPER_EMAIL, SUPER_HASH, SUPER_USERNAME);
-// ponytail: el super user se inserta sin transacción de página, así que backfill aquí mismo
-db.prepare(
-  `INSERT OR IGNORE INTO pages (user_id) SELECT id FROM users WHERE email = ?`
-).run(SUPER_EMAIL);
+// Admin (role "super") no tiene perfil/links — sólo gestiona usuarios y ve analíticas, sin page propia.
 
 export default db;

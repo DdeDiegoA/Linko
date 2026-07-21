@@ -36,3 +36,14 @@ export function requireSuperUser(req: NextApiRequest): TokenPayload | null {
   if (row?.role !== "super") return null;
   return user;
 }
+
+// Admin (role "super") no tiene perfil/links/redes — sólo gestiona usuarios y ve analíticas.
+export function requireRegularUser(req: NextApiRequest): TokenPayload | null {
+  const user = getAuthUser(req);
+  if (!user) return null;
+  const row = db.prepare("SELECT role FROM users WHERE id = ?").get(user.userId) as
+    | { role: string }
+    | undefined;
+  if (row?.role === "super") return null;
+  return user;
+}

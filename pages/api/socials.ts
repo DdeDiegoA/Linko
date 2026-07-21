@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import db from "@/lib/db";
-import { getAuthUser, getPageIdForUser } from "@/lib/middleware";
+import { requireRegularUser, getPageIdForUser } from "@/lib/middleware";
 import { DEFAULT_SOCIAL_ICON, type SocialLink, type SocialPlatform } from "@/types";
 import { TABLER_ICON_NAMES } from "@/lib/icons";
 
@@ -36,17 +36,30 @@ function isValidUrl(value: string): boolean {
 function validateSocialFields(body: any): string | null {
   if (!PLATFORMS.includes(body.platform)) return "platform inválida";
   if (typeof body.url !== "string" || !isValidUrl(body.url)) return "url inválida";
-  if (!HEX_COLOR_RE.test(body.icon_color)) return "icon_color inválido";
   if (body.text !== undefined && typeof body.text !== "string") return "text inválido";
   if (body.platform === "other") {
     if (typeof body.icon !== "string" || !body.icon || !ICON_SET.has(body.icon))
       return "icon inválido para plataforma other";
   }
+  // icon_color/icon_background_color sólo se validan cuando custom_color=1.
+  // Cuando 0, la API rellena con los defaults del page.
+  const customColor = body.custom_color === 1 || body.custom_color === true ? 1 : 0;
+  if (customColor === 1) {
+    if (!HEX_COLOR_RE.test(body.icon_color)) return "icon_color inválido";
+    if (!HEX_COLOR_RE.test(body.icon_background_color)) return "icon_background_color inválido";
+  }
   return null;
 }
 
+// page defaults de redes, respaldo para redes sin custom_color.
+function pageSocialDefaults(pageId: number) {
+  return db
+    .prepare("SELECT social_icon_color, social_icon_background_color FROM pages WHERE id = ?")
+    .get(pageId) as { social_icon_color: string; social_icon_background_color: string };
+}
+
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authUser = getAuthUser(req);
+  const authUser = requireRegularUser(req);
   if (!authUser) return res.status(401).json({ error: "No autenticado" });
 
   const pageId = getPageIdForUser(authUser.userId);
@@ -79,6 +92,11 @@ function handlePost(pageId: number, req: NextApiRequest, res: NextApiResponse) {
   const error = validateSocialFields(body);
   if (error) return res.status(400).json({ error });
 
+  const customColor = body.custom_color === 1 || body.custom_color === true ? 1 : 0;
+  const defaults = pageSocialDefaults(pageId);
+  const icon_color = customColor === 1 ? body.icon_color : defaults.social_icon_color;
+  const icon_background_color = customColor === 1 ? body.icon_background_color : defaults.social_icon_background_color;
+
   const nextPos =
     (
       db
@@ -88,13 +106,15 @@ function handlePost(pageId: number, req: NextApiRequest, res: NextApiResponse) {
 
   const result = db
     .prepare(
-      `INSERT INTO social_links (page_id, platform, icon, icon_color, text, url, position) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO social_links (page_id, platform, icon, icon_color, icon_background_color, custom_color, text, url, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       pageId,
       body.platform,
       resolveSocialIcon(body.platform, body.icon),
-      body.icon_color,
+      icon_color,
+      icon_background_color,
+      customColor,
       body.text || "",
       body.url,
       nextPos
@@ -117,10 +137,19 @@ function handlePut(pageId: number, req: NextApiRequest, res: NextApiResponse) {
   const error = validateSocialFields(body);
   if (error) return res.status(400).json({ error });
 
-  db.prepare(`UPDATE social_links SET platform=?, icon=?, icon_color=?, text=?, url=? WHERE id=? AND page_id=?`).run(
+  const customColor = body.custom_color === 1 || body.custom_color === true ? 1 : 0;
+  const defaults = pageSocialDefaults(pageId);
+  const icon_color = customColor === 1 ? body.icon_color : defaults.social_icon_color;
+  const icon_background_color = customColor === 1 ? body.icon_background_color : defaults.social_icon_background_color;
+
+  db.prepare(
+    `UPDATE social_links SET platform=?, icon=?, icon_color=?, icon_background_color=?, custom_color=?, text=?, url=? WHERE id=? AND page_id=?`
+  ).run(
     body.platform,
     resolveSocialIcon(body.platform, body.icon),
-    body.icon_color,
+    icon_color,
+    icon_background_color,
+    customColor,
     body.text || "",
     body.url,
     id,

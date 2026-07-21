@@ -5,18 +5,18 @@ import type { GetServerSideProps } from "next";
 import { verifyToken } from "@/lib/auth";
 import { InView } from "@/components/animate-ui/effects/in-view";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
+import { useToast } from "@/components/Toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const toast = useToast();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -24,12 +24,15 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Error al crear la cuenta");
+        toast.error(data.error ?? "Error al crear la cuenta");
         return;
       }
+      toast.success("Cuenta creada");
       router.push("/dashboard");
+    } catch {
+      toast.error("No se pudo conectar con el servidor");
     } finally {
       setLoading(false);
     }
@@ -43,7 +46,7 @@ export default function RegisterPage() {
           className="flex w-full flex-col gap-[22px] rounded-lg border border-border bg-surface px-9 py-11 shadow-lg"
         >
           <h1 className="text-center font-display text-[32px] font-normal text-fg">Crear cuenta</h1>
-          <p className="-mt-3 text-center font-display text-sm text-fg/80">Elegí tu username y empezá</p>
+          <p className="-mt-3 text-center font-display text-sm text-fg/80">Elige tu username y empieza</p>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wide text-fg">
@@ -95,8 +98,6 @@ export default function RegisterPage() {
           />
         </div>
 
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-
         <AnimateButton
           type="submit"
           disabled={loading}
@@ -106,7 +107,7 @@ export default function RegisterPage() {
         </AnimateButton>
 
         <p className="text-center font-display text-sm text-fg/80">
-          ¿Ya tenés cuenta?{" "}
+          ¿Ya tienes cuenta?{" "}
           <Link href="/login" className="font-semibold text-fg underline underline-offset-4 hover:text-accent">
             Entrar
           </Link>

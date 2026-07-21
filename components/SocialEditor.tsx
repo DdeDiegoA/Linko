@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { DEFAULT_SOCIAL_ICON, type SocialLink, type SocialPlatform } from "@/types";
+import { DEFAULT_SOCIAL_ICON, type Page, type SocialLink, type SocialPlatform } from "@/types";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
 import IconPicker from "@/components/IconPicker";
 import TablerIcon from "@/components/TablerIcon";
@@ -25,15 +25,21 @@ const PLATFORM_LABELS: Record<SocialPlatform, string> = {
 };
 
 export default function SocialEditor({
+  page,
   socials,
   onChange,
+  onPageSaved,
 }: {
+  page: Page;
   socials: SocialLink[];
   onChange: (socials: SocialLink[]) => void;
+  onPageSaved: (p: Page) => void;
 }) {
   const [platform, setPlatform] = useState<SocialPlatform>("github");
   const [url, setUrl] = useState("");
+  const [customColor, setCustomColor] = useState<0 | 1>(0);
   const [iconColor, setIconColor] = useState("#1a1a1a");
+  const [iconBg, setIconBg] = useState("#ffffff");
   const [text, setText] = useState("");
   const [icon, setIcon] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +70,9 @@ export default function SocialEditor({
       body: JSON.stringify({
         platform,
         url,
+        custom_color: customColor,
         icon_color: iconColor,
+        icon_background_color: iconBg,
         text,
         icon: platform === "other" ? icon : undefined,
       }),
@@ -76,6 +84,8 @@ export default function SocialEditor({
     }
     setUrl("");
     setText("");
+    setCustomColor(0);
+    setIconBg("#ffffff");
     if (platform === "other") setIcon("");
     await reload();
   }
@@ -89,6 +99,8 @@ export default function SocialEditor({
     <div className="max-w-[720px]">
       <h2 className="mb-1 font-display text-[32px] font-normal text-fg">Redes sociales</h2>
       <p className="mb-9 text-sm text-muted">Los íconos que aparecen al final de tu página</p>
+
+      <DefaultColorEditor page={page} onSaved={onPageSaved} />
 
       <section className="mb-5 rounded-lg border border-[#e6e6e4] border-t-[3px] border-t-accent bg-white p-6 shadow-sm">
         <FieldRow label="Plataforma">
@@ -113,7 +125,7 @@ export default function SocialEditor({
           ) : (
             <div className="flex flex-1 items-center">
               <IconPicker value={icon} onChange={setIcon} label="" />
-              {!icon && <span className="ml-2 text-xs text-red-600">Elegí un ícono</span>}
+              {!icon && <span className="ml-2 text-xs text-red-600">Elige un ícono</span>}
             </div>
           )}
         </FieldRow>
@@ -127,12 +139,43 @@ export default function SocialEditor({
           />
         </FieldRow>
         <FieldRow label="Color icono">
-          <input
-            type="color"
-            value={iconColor}
-            onChange={(e) => setIconColor(e.target.value)}
-            className="h-[34px] w-11 cursor-pointer rounded border border-[#e6e6e4] p-0.5"
-          />
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted">
+              <input
+                type="checkbox"
+                checked={customColor === 1}
+                onChange={(e) => setCustomColor(e.target.checked ? 1 : 0)}
+                className="h-3.5 w-3.5"
+              />
+              Personalizar
+            </label>
+            {customColor === 1 ? (
+              <>
+                <label className="text-xs text-muted">
+                  Ícono
+                  <input
+                    type="color"
+                    value={iconColor}
+                    onChange={(e) => setIconColor(e.target.value)}
+                    className="ml-1 h-7 w-9 cursor-pointer align-middle"
+                  />
+                </label>
+                <label className="text-xs text-muted">
+                  Fondo
+                  <input
+                    type="color"
+                    value={iconBg}
+                    onChange={(e) => setIconBg(e.target.value)}
+                    className="ml-1 h-7 w-9 cursor-pointer align-middle"
+                  />
+                </label>
+              </>
+            ) : (
+              <span className="text-xs text-muted">
+                Usa los colores por defecto de la página
+              </span>
+            )}
+          </div>
         </FieldRow>
         <FieldRow label="Texto">
           <input
@@ -158,14 +201,17 @@ export default function SocialEditor({
         {socials.length === 0 && <p className="text-sm text-muted">Todavía no agregaste redes sociales.</p>}
         {socials.map((s) => {
           const iconName = s.icon ?? DEFAULT_SOCIAL_ICON[s.platform];
+          const custom = s.custom_color === 1;
+          const color = custom ? s.icon_color : page.social_icon_color;
+          const backgroundColor = custom ? s.icon_background_color : page.social_icon_background_color;
           return (
             <div
               key={s.id}
               className="mb-2 flex items-center gap-3.5 rounded border border-[#e6e6e4] bg-[#fafaf9] px-4 py-3.5"
             >
               <span
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#e6e6e4] bg-white"
-                style={{ color: s.icon_color }}
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#e6e6e4]"
+                style={{ color, backgroundColor }}
               >
                 <TablerIcon name={iconName} size={20} />
               </span>
@@ -185,6 +231,75 @@ export default function SocialEditor({
         })}
       </section>
     </div>
+  );
+}
+
+function DefaultColorEditor({ page, onSaved }: { page: Page; onSaved: (p: Page) => void }) {
+  const [iconColor, setIconColor] = useState(page.social_icon_color);
+  const [iconBg, setIconBg] = useState(page.social_icon_background_color);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/page", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...page,
+          social_icon_color: iconColor,
+          social_icon_background_color: iconBg,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Error al guardar colores por defecto");
+        return;
+      }
+      onSaved(data.page);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mb-5 rounded-lg border border-[#e6e6e4] border-t-[3px] border-t-accent bg-white p-6 shadow-sm">
+      <div className="mb-1 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-fg">Colores por defecto</h3>
+        <span className="text-xs text-muted">Se aplican a todas las redes sin personalizar</span>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <label className="text-xs text-muted">
+          Color ícono
+          <input
+            type="color"
+            value={iconColor}
+            onChange={(e) => setIconColor(e.target.value)}
+            className="ml-1 h-7 w-9 cursor-pointer align-middle"
+          />
+        </label>
+        <label className="text-xs text-muted">
+          Fondo ícono
+          <input
+            type="color"
+            value={iconBg}
+            onChange={(e) => setIconBg(e.target.value)}
+            className="ml-1 h-7 w-9 cursor-pointer align-middle"
+          />
+        </label>
+        <AnimateButton
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="rounded bg-accent px-4 py-2 text-sm font-semibold text-fg hover:opacity-90 disabled:opacity-60"
+        >
+          {saving ? "Guardando…" : "Guardar colores por defecto"}
+        </AnimateButton>
+      </div>
+      {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
+    </section>
   );
 }
 

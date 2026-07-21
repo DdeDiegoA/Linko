@@ -9,10 +9,10 @@ import { Accordion } from '@/components/animate-ui/components/accordion';
 import styles from './landing.module.css';
 
 const FAQ_ITEMS = [
-  { q: '¿Necesito saber programar?', a: 'No. Linko se crea desde el navegador. Elegí tu nombre, subí una foto, agregá links y listo.' },
+  { q: '¿Necesito saber programar?', a: 'No. Linko se crea desde el navegador. Elige tu nombre, sube una foto, agrega links y listo.' },
   { q: '¿Es gratis?', a: 'Sí. La versión base es gratuita y sin límites de links. En el futuro habrá funciones premium opcionales.' },
-  { q: '¿Puedo usar mi propio dominio?', a: 'En la versión gratuita tenés un link tipo linko.tu/usuario. El dominio propio llegará pronto.' },
-  { q: '¿Quién ve mis analíticas?', a: 'Solo vos. No vendemos datos ni mostramos publicidad basada en tu tráfico.' },
+  { q: '¿Puedo usar mi propio dominio?', a: 'En la versión gratuita tienes un link tipo linko.tu/usuario. El dominio propio llegará pronto.' },
+  { q: '¿Quién ve mis analíticas?', a: 'Solo tú. No vendemos datos ni mostramos publicidad basada en tu tráfico.' },
 ];
 
 const Home: NextPage = () => {
@@ -166,13 +166,13 @@ const Home: NextPage = () => {
         <div className={styles.container}>
           <div className={styles.featuresHeader}>
             <h2>Menos plataforma, más tú.</h2>
-            <p>No necesitás un sitio web completo. Necesitás un lugar donde todo lo que hacés conviva.</p>
+            <p>No necesitas un sitio web completo. Necesitas un lugar donde todo lo que haces conviva.</p>
           </div>
           <div className={styles.featuresGrid}>
             {[1, 2, 3].map((num) => (
               <InView key={num} className={styles.feature} delay={(num - 1) * 0.1}>
                 <div className={styles.featureIcon}>{num}</div>
-                <h3>{num === 1 ? 'Sin marca ajena' : num === 2 ? 'Sabés qué clickean' : 'Para tu círculo'}</h3>
+                <h3>{num === 1 ? 'Sin marca ajena' : num === 2 ? 'Sabes qué clickean' : 'Para tu círculo'}</h3>
                 <p>
                   {num === 1 && 'Tu dominio, tu nombre, tu paleta. Nada de "powered by" al pie de página.'}
                   {num === 2 && 'Analíticas simples: visitas, clics por link, y qué funciona mejor.'}
@@ -191,9 +191,9 @@ const Home: NextPage = () => {
           </div>
           <div className={styles.howSteps}>
             {[
-              { num: 1, title: 'Creá tu página', desc: 'Elegí tu usuario. Eso es todo. No hace falta email de confirmación.' },
-              { num: 2, title: 'Agregá tus links', desc: 'Tu tienda, tu portafolio, tu newsletter, tus redes. Todo en un solo lugar.' },
-              { num: 3, title: 'Comparte', desc: 'Copiá tu link y pegalo donde quieras. Bio de Instagram, firma de mail, tarjeta de presentación.' }
+              { num: 1, title: 'Crea tu página', desc: 'Elige tu usuario. Eso es todo. No hace falta email de confirmación.' },
+              { num: 2, title: 'Agrega tus links', desc: 'Tu tienda, tu portafolio, tu newsletter, tus redes. Todo en un solo lugar.' },
+              { num: 3, title: 'Comparte', desc: 'Copia tu link y pégalo donde quieras. Bio de Instagram, firma de mail, tarjeta de presentación.' }
             ].map((step) => (
               <InView key={step.num} className={styles.howStep} delay={(step.num - 1) * 0.1}>
                 <div className={styles.howNum}>{step.num}</div>

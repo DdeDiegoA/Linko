@@ -7,6 +7,7 @@ import { getAuthUser } from "@/lib/middleware";
 import StyleEditor from "@/components/StyleEditor";
 import LinkEditor from "@/components/LinkEditor";
 import SocialEditor from "@/components/SocialEditor";
+import AnalyticsBars from "@/components/AnalyticsBars";
 import { InView } from "@/components/animate-ui/effects/in-view";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
 import type { Page, LinkItem, SocialLink } from "@/types";
@@ -22,6 +23,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const authUser = getAuthUser(ctx.req as Parameters<typeof getAuthUser>[0]);
   if (!authUser) {
     return { redirect: { destination: "/login", permanent: false } };
+  }
+
+  const userRow = db.prepare("SELECT role FROM users WHERE id = ?").get(authUser.userId) as
+    | { role: string }
+    | undefined;
+  if (userRow?.role === "super") {
+    return { redirect: { destination: "/admin", permanent: false } };
   }
 
   const page = db.prepare("SELECT * FROM pages WHERE user_id = ?").get(authUser.userId) as Page;
@@ -119,12 +127,13 @@ className={`font-body relative rounded px-3.5 py-2.5 text-left text-sm transitio
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               {tab === "perfil" && <StyleEditor page={page} links={links} socials={socials} onSaved={setPage} />}
-              {tab === "links" && <LinkEditor links={links} onChange={setLinks} />}
-              {tab === "redes" && <SocialEditor socials={socials} onChange={setSocials} />}
+              {tab === "links" && <LinkEditor page={page} links={links} onChange={setLinks} onPageSaved={setPage} />}
+              {tab === "redes" && <SocialEditor page={page} socials={socials} onChange={setSocials} onPageSaved={setPage} />}
               {tab === "analytics" && (
                 <InView as="div" className="max-w-[720px]" offset={18}>
                   <h2 className="mb-1 font-display text-[32px] font-normal text-fg">Analíticas</h2>
-                  <p className="font-display text-sm text-muted">Próximamente.</p>
+                  <p className="mb-9 text-sm text-muted">Tráfico de tu página y clicks por link</p>
+                  <AnalyticsBars />
                 </InView>
               )}
             </motion.div>

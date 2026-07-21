@@ -5,17 +5,17 @@ import type { GetServerSideProps } from "next";
 import { verifyToken } from "@/lib/auth";
 import { InView } from "@/components/animate-ui/effects/in-view";
 import { AnimateButton } from "@/components/animate-ui/buttons/button";
+import { useToast } from "@/components/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -23,12 +23,15 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Error al iniciar sesión");
+        toast.error(data.error ?? "Error al iniciar sesión");
         return;
       }
+      toast.success(`Bienvenido, ${data.username ?? ""}`);
       router.push("/dashboard");
+    } catch {
+      toast.error("No se pudo conectar con el servidor");
     } finally {
       setLoading(false);
     }
@@ -76,8 +79,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-
         <AnimateButton
           type="submit"
           disabled={loading}
@@ -87,7 +88,7 @@ export default function LoginPage() {
         </AnimateButton>
 
         <p className="text-center font-display text-sm text-fg/80">
-          ¿No tenés cuenta?{" "}
+          ¿No tienes cuenta?{" "}
           <Link href="/register" className="font-semibold text-fg underline underline-offset-4 hover:text-accent">
             Crear una
           </Link>

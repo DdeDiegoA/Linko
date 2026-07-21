@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { getAuthUser } from "@/lib/middleware";
+import { requireRegularUser } from "@/lib/middleware";
 
 export const config = { api: { bodyParser: false } };
 
@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const authUser = getAuthUser(req);
+  const authUser = requireRegularUser(req);
   if (!authUser) {
     return res.status(401).json({ error: "No autenticado" });
   }
