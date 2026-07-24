@@ -152,6 +152,10 @@ curl -sI https://linko.decodgo.com | head -1
 
 > Plan de deploy completo: `../deploy-linko-plan.md`
 
+## Autor
+
+Diego Arenas — [diegoarenas111@gmail.com](mailto:diegoarenas111@gmail.com)
+
 ## Estado
 
 v0.1.0 — base funcional: registro/login, editor de página, página pública, panel admin. Dominio propio y analíticas detalladas en roadmap.
